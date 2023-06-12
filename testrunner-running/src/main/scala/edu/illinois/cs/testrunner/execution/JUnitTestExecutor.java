@@ -31,9 +31,9 @@ public class JUnitTestExecutor {
     // If IDEMPOTENT_NUM_RUNS > 1 and CONSEC_IDEMPOTENT is false, then the run will be C1.t1, C1.t2, C1.t1, C1.t2
     // If IDEMPOTENT_NUM_RUNS > 1 and CONSEC_IDEMPOTENT is true, then the run will be C1.t1, C1.t1, C1.t2, C1.t2
     public static final int IDEMPOTENT_NUM_RUNS =
-        Configuration.config().getProperty("testplugin.runner.idempotent.num.runs", -1);
+            Configuration.config().getProperty("testplugin.runner.idempotent.num.runs", -1);
     public static final boolean CONSEC_IDEMPOTENT  =
-        Configuration.config().getProperty("testplugin.runner.consec.idempotent", false);
+            Configuration.config().getProperty("testplugin.runner.consec.idempotent", false);
 
     public static TestRunResult runOrder(final String testRunId,
                                          final List<String> testList,
@@ -254,41 +254,43 @@ public class JUnitTestExecutor {
         if (idempotentRuns > 1 && randomizeRuns > 1) {
             // iDFlakies encounters a NPE when verifying non-idempotent OD tests
             throw new RuntimeException("dt.randomize.rounds is set to " + randomizeRuns +
-                                       " and testplugin.runner.idempotent.num.runs is set to " +
-                                       idempotentRuns + ". Either configuration must be <= 1.");
+                    " and testplugin.runner.idempotent.num.runs is set to " +
+                    idempotentRuns + ". Either configuration must be <= 1.");
         }
         for (int i = 0; i < idempotentRuns; i++) {
+            long start = System.currentTimeMillis();
             // Construct the request that filters out only tests we need and sorts in specified order
             re = core.run(Request.classes(classes.toArray(new Class[0])).
-                          // Filter to only include passed in tests
-                          filterWith(new Filter() {
-                                  @Override
-                                      public boolean shouldRun(Description description) {
-                                      if (description.isTest()) {
-                                          return descs.contains(description);
-                                      }
+                    // Filter to only include passed in tests
+                            filterWith(new Filter() {
+                        @Override
+                        public boolean shouldRun(Description description) {
+                            if (description.isTest()) {
+                                return descs.contains(description);
+                            }
 
-                                      for (Description each : description.getChildren()) {
-                                          if (shouldRun(each)) {
-                                              return true;
-                                          }
-                                      }
-                                      return false;
-                                  }
+                            for (Description each : description.getChildren()) {
+                                if (shouldRun(each)) {
+                                    return true;
+                                }
+                            }
+                            return false;
+                        }
 
-                                  @Override
-                                      public String describe() {
-                                      return "Filter by list";
-                                  }
-                              }).
-                          // Sort to run based on passed in tests
-                          sortWith(new Comparator<Description>() {
-                                  @Override
-                                  public int compare(Description d1, Description d2) {
-                                      return descs.indexOf(d1) - descs.indexOf(d2);
-                                  }
-                              }));
+                        @Override
+                        public String describe() {
+                            return "Filter by list";
+                        }
+                    }).
+                    // Sort to run based on passed in tests
+                            sortWith(new Comparator<Description>() {
+                        @Override
+                        public int compare(Description d1, Description d2) {
+                            return descs.indexOf(d1) - descs.indexOf(d2);
+                        }
+                    }));
 
+            long end = System.currentTimeMillis() - start;
             final Set<TestResult> results = results(re, tests, listener);
 
             for (final JUnitTest test : tests) {
@@ -300,6 +302,8 @@ public class JUnitTestExecutor {
                 String testName = (IDEMPOTENT_NUM_RUNS  > 1) ? (result.name() + ":" + i) : result.name();
                 finalResult.results().put(testName, result);
             }
+
+            finalResult.setTime(((double) end) / 1000.0);
         }
     }
 
@@ -318,12 +322,13 @@ public class JUnitTestExecutor {
     }
 
     public Optional<TestRunResult> execute(final String testRunId) {
+        final long start = System.currentTimeMillis();
         final TestRunResult results = execute(testRunId, testOrder);
-
+        final long end = System.currentTimeMillis() - start;
         final List<String> testOrderNames =
                 testOrder.stream().map(JUnitTest::name).collect(Collectors.toList());
 
-        return Optional.of(new TestRunResult(testRunId, testOrderNames, results.results()));
+        return Optional.of(new TestRunResult(testRunId, testOrderNames, results.results(), (end) / 1000));
 
     }
 

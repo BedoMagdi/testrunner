@@ -36,7 +36,8 @@ trait Runner {
         val builder = new ExecutionInfoBuilder(classOf[Executor]).classpath(cp)
 
         if (Configuration.config().getProperty(ConfigProps.CAPTURE_STATE, false)) {
-            builder.javaAgent(Paths.get(Configuration.config().getProperty("testplugin.javaagent")))
+            //builder.javaAgent(Paths.get(Configuration.config().getProperty("testplugin.javaagent")))
+            builder.javaOpts(Configuration.config().getProperty("testplugin.javaOpts").split(" ").toList)
         }
 
         builder.environment(environment())
@@ -46,31 +47,31 @@ trait Runner {
 
     def runWithCp(cp: String, testOrder: Stream[String]): Try[TestRunResult] =
         TempFiles.withSeq(testOrder)(path =>
-        TempFiles.withTempFile(outputPath =>
-        TempFiles.withProperties(Configuration.config().properties())(propertiesPath => {
-            val builder = makeBuilder(cp + File.pathSeparator + Configuration.config().getProperty("testplugin.classpath"))
+            TempFiles.withTempFile(outputPath =>
+                TempFiles.withProperties(Configuration.config().properties())(propertiesPath => {
+                    val builder = makeBuilder(cp + File.pathSeparator + Configuration.config().getProperty("testplugin.classpath"))
 
-            val info = execution(testOrder, builder)
+                    val info = execution(testOrder, builder)
 
-            val testRunId = generateTestRunId()
+                    val testRunId = generateTestRunId()
 
-            val exitCode = info.run(
-                    testRunId,
-                    framework().toString,
-                    path.toAbsolutePath.toString,
-                    propertiesPath.toAbsolutePath.toString,
-                    outputPath.toAbsolutePath.toString).exitValue()
+                    val exitCode = info.run(
+                        testRunId,
+                        framework().toString,
+                        path.toAbsolutePath.toString,
+                        propertiesPath.toAbsolutePath.toString,
+                        outputPath.toAbsolutePath.toString).exitValue()
 
-            if (exitCode == 0) {
-                autoClose(Source.fromFile(outputPath.toAbsolutePath.toString).bufferedReader())(reader =>
-                    Try(new Gson().fromJson(reader, classOf[TestRunResult])))
-            } else {
-                // Try to copy the output log so that it can be inspected
-                val failureLog = Paths.get("failing-test-output-" + testRunId)
-                Files.copy(info.outputPath, failureLog, StandardCopyOption.REPLACE_EXISTING)
-                Failure(new Exception("Non-zero exit code (output in " + failureLog.toAbsolutePath + "): " ++ exitCode.toString))
-            }
-        }))).flatten.flatten.flatten.flatten
+                    if (exitCode == 0) {
+                        autoClose(Source.fromFile(outputPath.toAbsolutePath.toString).bufferedReader())(reader =>
+                            Try(new Gson().fromJson(reader, classOf[TestRunResult])))
+                    } else {
+                        // Try to copy the output log so that it can be inspected
+                        val failureLog = Paths.get("failing-test-output-" + testRunId)
+                        Files.copy(info.outputPath, failureLog, StandardCopyOption.REPLACE_EXISTING)
+                        Failure(new Exception("Non-zero exit code (output in " + failureLog.toAbsolutePath + "): " ++ exitCode.toString))
+                    }
+                }))).flatten.flatten.flatten.flatten
 }
 
 trait RunnerProvider[A <: Runner] {

@@ -19,13 +19,13 @@ public class JUnit5TestListener implements TestExecutionListener {
 
     // key is the full qualified method name
     private Map<String, TestResult> results;
-    private Map<String, Long> startTimesNano;
+    private Map<String, Long> startTimesMillis;
     private List<String> testOrder;  // a list of full qualified method names
 
     public JUnit5TestListener() {
         this.results = new HashMap<>();
         this.testOrder = new ArrayList<>();
-        this.startTimesNano = new HashMap<>();
+        this.startTimesMillis = new HashMap<>();
     }
 
     public Map<String, TestResult> getResults() {
@@ -59,9 +59,9 @@ public class JUnit5TestListener implements TestExecutionListener {
             return;
         }
 
-        this.startTimesNano.put(
+        this.startTimesMillis.put(
                 Utils.toFullyQualifiedName(identifier.getUniqueId()),
-                System.nanoTime());
+                System.currentTimeMillis());
     }
 
     @Override
@@ -73,8 +73,8 @@ public class JUnit5TestListener implements TestExecutionListener {
 
         String fullyQualifiedName = Utils.toFullyQualifiedName(
                 identifier.getUniqueId());
-        double runtime = (System.nanoTime() -
-                this.startTimesNano.get(fullyQualifiedName)) / 1E9;
+        double runtime = ( System.currentTimeMillis() -
+                this.startTimesMillis.get(fullyQualifiedName)) / 1E3;
         this.testOrder.add(fullyQualifiedName);
         if (executionResult.getStatus() == Status.FAILED) {
             executionResult.getThrowable().get().printStackTrace();
@@ -87,8 +87,8 @@ public class JUnit5TestListener implements TestExecutionListener {
         } else {
             // passed
             this.results.put(fullyQualifiedName,
-                             TestResultFactory.passing(runtime,
-                                                       fullyQualifiedName));
+                    TestResultFactory.passing(runtime,
+                            fullyQualifiedName));
         }
     }
 

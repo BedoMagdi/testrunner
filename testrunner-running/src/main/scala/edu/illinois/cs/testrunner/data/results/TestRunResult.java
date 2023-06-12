@@ -15,21 +15,31 @@ import java.util.UUID;
 
 public class TestRunResult {
     public static TestRunResult empty(final String id) {
-        return new TestRunResult(id, new ArrayList<>(), new HashMap<>());
+        return new TestRunResult(id, new ArrayList<>(), new HashMap<>(), 0);
     }
 
     private final String id;
     private final List<String> testOrder;
     private final Map<String, TestResult> results;
+    private double time;
 
-    public TestRunResult(final String id, final List<String> testOrder, final Map<String, TestResult> results) {
+    public TestRunResult(final String id, final List<String> testOrder, final Map<String, TestResult> results, double time) {
         this.id = id;
         this.testOrder = testOrder;
         this.results = results;
+        this.time = time;
     }
 
     public String id() {
         return id;
+    }
+
+    public double time(){
+        return this.time;
+    }
+
+    public void setTime(double time){
+        this.time = time;
     }
 
     public List<String> testOrder() {

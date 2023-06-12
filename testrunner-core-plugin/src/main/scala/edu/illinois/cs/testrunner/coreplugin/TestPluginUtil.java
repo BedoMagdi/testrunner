@@ -26,7 +26,7 @@ public class TestPluginUtil {
         URLClassLoader pluginClassloader = (URLClassLoader) Thread.currentThread().getContextClassLoader();
         pluginCpURLs = Arrays.asList(pluginClassloader.getURLs());
         pluginCp = String.join(File.pathSeparator,
-            pluginCpURLs.stream().map((PluginCpUrl) -> PluginCpUrl.getPath()).toArray(String[]::new));
+                pluginCpURLs.stream().map((PluginCpUrl) -> PluginCpUrl.getPath()).toArray(String[]::new));
     }
 
     private static List<URL> pluginClasspathUrls() {
@@ -46,8 +46,13 @@ public class TestPluginUtil {
     }
 
     private static void configJavaAgentPath() {
-        pluginClasspathUrls().stream().filter((url) -> url.toString().contains("testrunner-maven-plugin") || 
-            url.toString().contains("testrunner-gradle-plugin")).forEach((url) -> Configuration.config().setDefault("testplugin.javaagent", url.toString()));
+        pluginClasspathUrls().stream().filter((url) -> url.toString().contains("testrunner-maven-plugin") ||
+                url.toString().contains("testrunner-gradle-plugin")).forEach((url) -> Configuration.config().setDefault("testplugin.javaagent", url.toString()));
+    }
+
+    private static void configJavaOpts() {
+        pluginClasspathUrls().stream().filter((url) -> url.toString().contains("testrunner-maven-plugin") ||
+                url.toString().contains("testrunner-gradle-plugin")).forEach((url) -> Configuration.config().setDefault("testplugin.javaOpts", url.toString()));
     }
 
     private static void setDefaults(Configuration configuration) {
@@ -60,11 +65,12 @@ public class TestPluginUtil {
         configuration.setDefault("testplugin.classpath", pluginClasspath());
 
         configJavaAgentPath();
+        configJavaOpts();
     }
 
     public static void setConfigs(String propertiesPath) throws IOException {
         System.getProperties()
-            .forEach((key, value) -> Configuration.config().properties().setProperty(key.toString(), value.toString()));
+                .forEach((key, value) -> Configuration.config().properties().setProperty(key.toString(), value.toString()));
 
         if (propertiesPath != null && !propertiesPath.isEmpty()) {
             Configuration.reloadConfig(Paths.get(propertiesPath));

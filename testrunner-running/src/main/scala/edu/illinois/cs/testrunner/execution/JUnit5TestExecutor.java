@@ -29,10 +29,11 @@ public class JUnit5TestExecutor {
         // TODO: group consecutive tests from the same class into a batch to run
         List<MethodSelector> methods =
                 tests.stream()
-                     .map(name -> DiscoverySelectors.selectMethod(name))
-                     .collect(Collectors.toList());
+                        .map(name -> DiscoverySelectors.selectMethod(name))
+                        .collect(Collectors.toList());
         JUnit5TestListener listener = new JUnit5TestListener();
         Launcher launcher = LauncherFactory.create();
+        final long start = System.currentTimeMillis();
         for (MethodSelector method : methods) {
             LauncherDiscoveryRequest request =
                     LauncherDiscoveryRequestBuilder
@@ -40,8 +41,8 @@ public class JUnit5TestExecutor {
             launcher.execute(request, listener);
         }
         return new TestRunResult(testRunId,
-                                 listener.getTestOrder(),
-                                 listener.getResults());
+                listener.getTestOrder(),
+                listener.getResults(), ((double) System.currentTimeMillis() - start) / 1000.0);
     }
 
 }

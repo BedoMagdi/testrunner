@@ -13,12 +13,12 @@ import scala.collection.JavaConverters._
 import scala.util.{Failure, Success, Try}
 
 /**
-  * Use this when you want to run similar sets of tests multiple times
-  * It will automatically time out using information from previous runs, detect flaky tests, and
-  * generally perform some basic sanity checks on the results
-  *
-  * Concurrency safe (if the underlying test suite can run concurrently)
-  */
+ * Use this when you want to run similar sets of tests multiple times
+ * It will automatically time out using information from previous runs, detect flaky tests, and
+ * generally perform some basic sanity checks on the results
+ *
+ * Concurrency safe (if the underlying test suite can run concurrently)
+ */
 class SmartRunner(testFramework: TestFramework, infoStore: TestInfoStore,
                   cp: String, env: java.util.Map[String, String], outputTo: Path) extends Runner {
     // TODO: Add ability to save/load test info
@@ -26,6 +26,7 @@ class SmartRunner(testFramework: TestFramework, infoStore: TestInfoStore,
     override def framework(): TestFramework = testFramework
 
     override def run(testOrder: Stream[String]): Try[TestRunResult] = {
+        println("testOrder size in SmartRunner = " + testOrder.length)
         val result = super.run(testOrder)
 
         this.synchronized(infoStore.update(testOrder.toList.asJava, result.toOption))
@@ -36,12 +37,12 @@ class SmartRunner(testFramework: TestFramework, infoStore: TestInfoStore,
         result.flatMap(result => {
             val resultSet = result.results().keySet().asScala.toSet
             val testSet = testOrder.toSet
-            if ((multiplier * testOrder.length) == result.results().size ){
+            if ((multiplier * testOrder.length) == result.results().size) {
                 Success(result)
             } else {
                 Failure(new RuntimeException("Set of executed tests is not equal to test list that should have been executed (" +
-                    result.results().size() + " tests executed, " + (multiplier * testOrder.length) +
-		    " tests expected). Did you use testplugin.runner.idempotent.num.runs? Missing tests are: " + testSet.diff(resultSet)))
+                  result.results().size() + " tests executed, " + (multiplier * testOrder.length) +
+                  " tests expected). Did you use testplugin.runner.idempotent.num.runs? Missing tests are: " + testSet.diff(resultSet)))
             }
         })
     }

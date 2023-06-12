@@ -8,6 +8,8 @@ public class Utils {
     private static final Pattern junit5BasicPattern = Pattern.compile(junit5BasicRegex);
     private static final String junit5NestedRegex = "\\[nested-class:([\\w.]+)\\]";
     private static final Pattern junit5NestedPattern = Pattern.compile(junit5NestedRegex);
+    private static final String junit5ParameterizedRegex = "\\[class:([\\w.]+).*\\[test-template:([\\w().]+).*\\[test-template-invocation:(.\\d+)";
+    private static final Pattern junit5ParameterizedPattern = Pattern.compile(junit5ParameterizedRegex);
     private static final String junit4Regex = "\\[test:(\\w+)\\(([\\w.]+)\\)";
     private static final Pattern junit4Pattern = Pattern.compile(junit4Regex);
 
@@ -45,12 +47,17 @@ public class Utils {
             sb.append(matcher.group(2));  // method
             return sb.toString();
         }
+        // check for parameterized tests
+        matcher = junit5ParameterizedPattern.matcher(identifierUniqueId);
+        if(matcher.find()){
+            return matcher.group(1) + "#" + matcher.group(2); //+ String.format("[%s]", matcher.group(3));
+        }
         // fall back to JUnit 4
         matcher = junit4Pattern.matcher(identifierUniqueId);
         if (matcher.find()) {
             return matcher.group(2) + "#" + matcher.group(1);
         }
         throw new IllegalStateException(
-            "Fail to parse identifierUniqueId: " + identifierUniqueId);
+                "Fail to parse identifierUniqueId: " + identifierUniqueId);
     }
 }
